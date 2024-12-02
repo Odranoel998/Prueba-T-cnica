@@ -3,42 +3,39 @@ from pydantic import BaseModel
 from typing import List, Optional
 from pymongo import MongoClient
 from bson import ObjectId
-import os
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
 app = FastAPI()
 
 origins = [
-    "*", 
+    "*",  
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, 
+    allow_origins=origins,  
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  
+    allow_headers=["*"], 
 )
 
-app = FastAPI()
-
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://db:27017")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo_db:27017")
 client = MongoClient(MONGO_URI)
 db = client["weber_database"]
 scripts_collection = db["scripts"]
 
 class ScriptModel(BaseModel):
-    id: Optional[str] 
+    id: Optional[str]  
     title: str
-    description: Optional[str] = None 
+    description: Optional[str] = None  
 
     @classmethod
     def from_mongo(cls, doc):
-        doc['id'] = str(doc['_id'])
-        del doc['_id']
+        doc['id'] = str(doc['_id'])  
+        del doc['_id']  
         return cls(**doc)
-
+    
 @app.get("/scripts", response_model=List[ScriptModel])
 async def get_scripts():
     documents = scripts_collection.find()
@@ -47,10 +44,10 @@ async def get_scripts():
 
 @app.post("/scripts", response_model=ScriptModel)
 async def create_script(script: ScriptModel):
-    script_dict = script.dict(exclude={"id"}) 
-    result = scripts_collection.insert_one(script_dict) 
-    new_script = scripts_collection.find_one({"_id": result.inserted_id}) 
-    return ScriptModel.from_mongo(new_script) 
+    script_dict = script.dict(exclude={"id"})  
+    result = scripts_collection.insert_one(script_dict)  
+    new_script = scripts_collection.find_one({"_id": result.inserted_id})  
+    return ScriptModel.from_mongo(new_script)  
 
 
 @app.get("/scripts/{script_id}", response_model=ScriptModel)
